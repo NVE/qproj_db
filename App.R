@@ -2,6 +2,13 @@
 
 library(shiny)
 library(shinydashboard)
+library(ggplot2)
+library(lubridate)
+library(plotly)
+library(GetoptLong)
+library(leaflet)
+library(jsonlite)
+library(raster)
 
 source("global.R")
 
@@ -61,19 +68,24 @@ ui <- dashboardPage(
       ),
       
       column(width = 5,
-             tabBox(
-               
-               id = "tabset1", width = 12,
-               
-               tabPanel("Station map",
-                        leafletOutput(outputId = "mymap",
-                                      width = 520,
-                                      height = 700)),
-               tabPanel("Map covarage", plotOutput(outputId = "plot_wsh",
-                                                   width = 520,
-                                                   height = 700))
-               
+             
+             leafletOutput(outputId = "mymap",
+                           width = 650,
+                           height = 760),
+             
+             absolutePanel(id = "map_controls",
+                           draggable = TRUE,
+                           top = 10, left = "auto",
+                           right = 40, bottom = "auto",
+                           width = 150, height = "auto",
+                           
+                           selectInput(inputId = "map_pts",
+                                       label = NULL,
+                                       choices = c("Mean runoff","Runoff efficiency"),
+                                       selected = "Mean runoff")
+                           
              )
+             
       )
       
     )
@@ -170,6 +182,99 @@ server <- function(input, output, session) {
     }
     
   })
+  
+  # This observed is responsible for updating the station markers
+  
+  observe({
+    
+    map_pts <- input$map_pts
+    
+    # Markers display runoff efficiency
+    
+    if (map_pts == "Runoff efficiency") {
+      
+      # Colors and legend label
+      
+      col_pal <- c('#5060E8', '#91bfdb','#fee090','#fc8d59','#d73027')
+      
+      col_breaks <- c(0, 0.8, 1.2, 1.6, 2.0, Inf)
+      
+      legend_str <- c("< 0.8", "0.8 - 1.2", "1.2 - 1.6", "1.6 - 2.0", "> 2.0")
+      
+      col_binned <- cut(df_meta$runoff_eff, col_breaks, labels = col_pal)
+      
+      # Update map
+      
+      leafletProxy("mymap") %>%
+        
+        clearShapes() %>%
+        
+        addCircleMarkers(lng = df_meta$longitude,
+                         lat = df_meta$latitude,
+                         layerId = paste(df_meta$regine_area, df_meta$main_no, sep = "."),
+                         color = col_binned,
+                         radius = 6,
+                         stroke = FALSE,
+                         opacity = 1,
+                         fillOpacity = 1) %>%
+        
+        addLegend("bottomright",
+                  colors = col_pal,
+                  labels = legend_str,
+                  title = "Runoff efficiency",
+                  layerId = "stat_legend") %>%
+        
+        hideGroup(group = "Precipitation")
+      
+    }
+    
+    # Markers display mean runoff
+    
+    if (map_pts == "Mean runoff") {
+      
+      # Colors and legend label
+      
+      pal <- colorBin(palette = "Blues",
+                      na.color = "transparent",
+                      bins = c(0, 500, 700, 1000, 1300, 1600, 2000, 2500, 3000, 4000, 6000))
+      
+      col_binned <- pal(df_meta$runoff_mean)
+      
+      # Update map
+      
+      leafletProxy("mymap") %>%
+        
+        clearShapes() %>%
+        
+        addCircleMarkers(lng = df_meta$longitude,
+                         lat = df_meta$latitude,
+                         layerId = paste(df_meta$regine_area, df_meta$main_no, sep = "."),
+                         fillColor = col_binned,
+                         fillOpacity = 1,
+                         stroke = TRUE,
+                         weight = 1,
+                         color = "black",
+                         radius = 6,
+                         opacity = 1) %>%
+        
+        addLegend("bottomright",
+                  pal = pal,
+                  values = df_meta$runoff_mean,
+                  title = "Mean runoff",
+                  layerId = "stat_legend") %>%
+        
+        showGroup(group = "Precipitation")
+      
+    }
+    
+  })
+  
+  
+  
+  
+  
+  
+  
   
   # Plot cumulative precipitation against runoff
   

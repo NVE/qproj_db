@@ -1,12 +1,3 @@
-# Libraries
-
-library(shiny)
-library(ggplot2)
-library(lubridate)
-library(plotly)
-library(GetoptLong)
-library(leaflet)
-library(jsonlite)
 
 # Helper code
 

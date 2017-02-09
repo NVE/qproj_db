@@ -49,30 +49,11 @@ plot_runoff <- function(data_monthly, istat) {
 
 plot_map <- function(df_meta) {
   
-  # Colors for runoff efficiency
-  
-  cbPalette <- c('#5060E8', '#91bfdb','#fee090','#fc8d59','#d73027')
-  
-  colors_qeff <- cut(df_meta$runoff_eff,
-                     c(0, 0.8, 1.2, 1.6, 2.0, 1000.0),
-                     labels = cbPalette)
-  
-  values <- c("< 0.8", "0.8 - 1.2", "1.2 - 1.6", "1.6 - 2.0", "> 2.0")
-  
-  # Colors for mean runoff
-  
-  cbPalette <- c('#5060E8', '#91bfdb','#fee090','#fc8d59','#d73027')
-  
-  colors_mean <- cut(df_meta$runoff_mean,
-                     c(0, 800, 1300, 1800, 2500, 10000.0),
-                     labels = cbPalette)
-  
   # Colors for precipitation map
   
   pal <- colorBin(palette = "Blues",
-                  domain = getValues(prec_raster),
                   na.color = "transparent",
-                  bins = 7)
+                  bins = c(0, 500, 700, 1000, 1300, 1600, 2000, 2500, 3000, 4000, 6000))
   
   # Create leaflet map
   
@@ -83,26 +64,6 @@ plot_map <- function(df_meta) {
     
     addRasterImage(prec_raster, colors = pal, opacity = 0.8, group = "Precipitation") %>%
     
-    addCircleMarkers(group = "Runoff efficiency",
-                     lng = df_meta$longitude,
-                     lat = df_meta$latitude,
-                     layerId = paste(df_meta$regine_area, df_meta$main_no, sep = "."),
-                     color = colors_qeff,
-                     radius = 6,
-                     stroke = FALSE,
-                     opacity = 1,
-                     fillOpacity = 1) %>%
-    
-    addCircleMarkers(group = "Mean runoff",
-                     lng = df_meta$longitude,
-                     lat = df_meta$latitude,
-                     layerId = paste(df_meta$regine_area, df_meta$main_no, sep = "."),
-                     color = colors_mean,
-                     radius = 6,
-                     stroke = FALSE,
-                     opacity = 1,
-                     fillOpacity = 1) %>%
-    
     addCircleMarkers(lng = df_meta$longitude[1],
                      lat = df_meta$latitude[1],
                      layerId = "selected_stat",
@@ -112,19 +73,10 @@ plot_map <- function(df_meta) {
                      opacity = 1,
                      fillOpacity = 0) %>%
     
-    addLegend("bottomright",
-              colors = cbPalette,
-              labels = values,
-              #group = "Double",
-              title = "Runoff efficiency") %>%
-    
     fitBounds(min(df_meta$longitude),
               min(df_meta$latitude),
               max(df_meta$longitude),
-              max(df_meta$latitude)) %>%
-    
-    addLayersControl(baseGroups = c("Mean runoff", "Runoff efficiency"),
-                     overlayGroups = c("Precipitation"))
+              max(df_meta$latitude))
   
 }
 
