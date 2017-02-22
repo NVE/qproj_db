@@ -1,14 +1,15 @@
 # Libraries
 
-library(shiny)
-library(shinydashboard)
-library(ggplot2)
-library(lubridate)
-library(plotly)
-library(GetoptLong)
-library(leaflet)
-library(jsonlite)
-library(raster)
+if (!require('shiny')) install.packages('shiny', repos = "http://cran.us.r-project.org"); library('shiny')
+if (!require('shinydashboard')) install.packages('shinydashboard', repos = "http://cran.us.r-project.org"); library('shinydashboard')
+if (!require('ggplot2')) install.packages('ggplot2', repos = "http://cran.us.r-project.org"); library('ggplot2')
+if (!require('lubridate')) install.packages('lubridate', repos = "http://cran.us.r-project.org"); library('lubridate')
+if (!require('plotly')) install.packages('plotly', repos = "http://cran.us.r-project.org"); library('plotly')
+if (!require('GetoptLong')) install.packages('GetoptLong', repos = "http://cran.us.r-project.org"); library('GetoptLong')
+if (!require('leaflet')) install.packages('leaflet', repos = "http://cran.us.r-project.org"); library('leaflet')
+if (!require('jsonlite')) install.packages('jsonlite', repos = "http://cran.us.r-project.org"); library('jsonlite')
+if (!require('raster')) install.packages('raster', repos = "http://cran.us.r-project.org"); library('raster')
+if (!require('rgdal')) install.packages('rgdal', repos = "http://cran.us.r-project.org"); library('rgdal')
 
 source("global.R")
 
@@ -70,7 +71,7 @@ ui <- dashboardPage(
       column(width = 5,
              
              leafletOutput(outputId = "mymap",
-                           width = 650,
+                           width = 850,
                            height = 760),
              
              absolutePanel(id = "map_controls",
@@ -81,7 +82,7 @@ ui <- dashboardPage(
                            
                            selectInput(inputId = "map_pts",
                                        label = NULL,
-                                       choices = c("Mean runoff","Runoff efficiency"),
+                                       choices = c("Mean runoff", "Mean runoff (txt)", "Runoff efficiency"),
                                        selected = "Mean runoff")
                            
              )
@@ -128,6 +129,14 @@ server <- function(input, output, session) {
                        selected = reactive_data$data_qual[istat])
     
     leafletProxy("mymap", session) %>%
+      
+      addPolygons(data = data_monthly[[istat]]$wsh_poly,
+                  weight = 2,
+                  color = "red",
+                  fill = FALSE,
+                  opacity = 1,
+                  layerId = "selected_poly") %>%
+      
       addCircleMarkers(lng = df_meta$longitude[istat],
                        lat = df_meta$latitude[istat],
                        layerId = "selected_stat",
@@ -143,28 +152,19 @@ server <- function(input, output, session) {
   
   observeEvent(input$mymap_marker_click, {
     
-    if(input$mymap_marker_click != "selected_stat") {
-      
-      ishape <- which(hbv_shape_id == input$mymap_marker_click$id)
-      
-      if (length(ishape) > 0) {
-        
-        leafletProxy("mymap", session) %>%
-          addGeoJSON(hbv_shape$features[[ishape]],
-                     weight = 1,
-                     color = "#444444",
-                     fill = FALSE,
-                     opacity = 1,
-                     layerId = "selected_poly")
-        
-      } else {
-        leafletProxy("mymap", session) %>%
-          removeGeoJSON(layerId = "selected_poly")
-      }
+    if(input$mymap_marker_click$id != "selected_stat") {
       
       istat <- which(stats == input$mymap_marker_click$id)
       
       leafletProxy("mymap", session) %>%
+        
+        addPolygons(data = data_monthly[[istat]]$wsh_poly,
+                    weight = 2,
+                    color = "red",
+                    fill = FALSE,
+                    opacity = 1,
+                    layerId = "selected_poly") %>%
+        
         addCircleMarkers(lng = df_meta$longitude[istat],
                          lat = df_meta$latitude[istat],
                          layerId = "selected_stat",
@@ -183,7 +183,7 @@ server <- function(input, output, session) {
     
   })
   
-  # This observed is responsible for updating the station markers
+  # This observer is responsible for updating the station markers
   
   observe({
     
@@ -207,8 +207,6 @@ server <- function(input, output, session) {
       
       leafletProxy("mymap") %>%
         
-        clearShapes() %>%
-        
         addCircleMarkers(lng = df_meta$longitude,
                          lat = df_meta$latitude,
                          layerId = paste(df_meta$regine_area, df_meta$main_no, sep = "."),
@@ -228,7 +226,7 @@ server <- function(input, output, session) {
       
     }
     
-    # Markers display mean runoff
+    # Markers display mean runoff without text
     
     if (map_pts == "Mean runoff") {
       
@@ -236,15 +234,13 @@ server <- function(input, output, session) {
       
       pal <- colorBin(palette = "Blues",
                       na.color = "transparent",
-                      bins = c(0, 500, 700, 1000, 1300, 1600, 2000, 2500, 3000, 4000, 6000))
+                      bins = c(0, 500, 800, 1200, 1700, 2500, 3500, 5000, 7000))
       
       col_binned <- pal(df_meta$runoff_mean)
       
       # Update map
       
       leafletProxy("mymap") %>%
-        
-        clearShapes() %>%
         
         addCircleMarkers(lng = df_meta$longitude,
                          lat = df_meta$latitude,
@@ -256,6 +252,48 @@ server <- function(input, output, session) {
                          color = "black",
                          radius = 6,
                          opacity = 1) %>%
+                         
+        addLegend("bottomright",
+                  pal = pal,
+                  values = df_meta$runoff_mean,
+                  title = "Mean runoff",
+                  layerId = "stat_legend") %>%
+        
+        showGroup(group = "Precipitation")
+      
+    }
+    
+    # Markers display mean runoff with text
+    
+    if (map_pts == "Mean runoff (txt)") {
+      
+      # Colors and legend label
+      
+      pal <- colorBin(palette = "Blues",
+                      na.color = "transparent",
+                      bins = c(0, 500, 800, 1200, 1700, 2500, 3500, 5000, 7000))
+      
+      col_binned <- pal(df_meta$runoff_mean)
+      
+      # Update map
+      
+      leafletProxy("mymap") %>%
+        
+        addCircleMarkers(lng = df_meta$longitude,
+                         lat = df_meta$latitude,
+                         layerId = paste(df_meta$regine_area, df_meta$main_no, sep = "."),
+                         fillColor = col_binned,
+                         fillOpacity = 1,
+                         stroke = TRUE,
+                         weight = 1,
+                         color = "black",
+                         radius = 6,
+                         opacity = 1,
+                         label = as.factor(round(df_meta$runoff_mean, digits = 0)),
+                         labelOptions = labelOptions(noHide = T,
+                                                     textOnly = TRUE,
+                                                     direction = 'right',
+                                                     textsize='15px')) %>%
         
         addLegend("bottomright",
                   pal = pal,
@@ -268,13 +306,6 @@ server <- function(input, output, session) {
     }
     
   })
-  
-  
-  
-  
-  
-  
-  
   
   # Plot cumulative precipitation against runoff
   
@@ -300,7 +331,7 @@ server <- function(input, output, session) {
   
   output$mymap <- renderLeaflet({
     
-    plot_map(df_meta)
+    plot_map(df_meta, data_monthly)
     
   })
   

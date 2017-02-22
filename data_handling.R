@@ -25,34 +25,33 @@ get_metadata <- function(data_list, stats_keep)  {
   
   # Load metadata from previous session if exist, otherwise load the original metadata
   
-  if (file.exists("data/metadata_updated.txt")) {
-    
-    df_meta <- read.table("data/metadata_updated.txt", header = TRUE, sep = ";", dec = ".")
-    
-  } else {
+#   if (file.exists("data/metadata_updated.txt")) {
+#     
+#     df_meta <- read.table("data/metadata_updated.txt", header = TRUE, sep = ";", dec = ".")
+#     
+#   } else {
     
     # Read metadata table
     
     df_meta <- read.table("data/metadata.txt", header = TRUE, sep = ";", dec = ".")
     
-    # Augment with runoff efficiency
+    # Augment with mean runoff/precipitation and runoff efficiency
     
-    df_meta$runoff_eff <- sapply(data_monthly, function(x) x$runoff_eff)
-    
-    # Augment with mean runoff
+    df_meta$prec_mean <- sapply(data_monthly, function(x) x$prec_mean)
     
     df_meta$runoff_mean <- sapply(data_monthly, function(x) x$runoff_mean)
+    
+    df_meta$runoff_eff <- sapply(data_monthly, function(x) x$runoff_eff)
     
     # Assign data quality
     
     df_meta <- asses_data_qualtiy(df_meta)
     
-  }
+  # }
   
   return(df_meta)
   
 }
-
 
 
 # Assess data qualilty
@@ -115,14 +114,26 @@ average_elevbands <- function(data_list) {
 }
 
 
-# Compute runoff efficiency
+# Compute mean runoff/precipitation and runoff efficiency
 
-runoff_efficiency <- function(data_list) {
+comp_stats <- function(data_list) {
+  
+  # Remove missing data
   
   df <- data.frame(prec = data_list$Prec_mean,
                    runoff = data_list$Runoff)
   
   df <- na.omit(df)
+  
+  # Annual average precipitation
+  
+  data_list$prec_mean <- 12*mean(df$prec, na.rm = TRUE)
+  
+  # Annual average runoff
+  
+  data_list$runoff_mean <- 12*mean(df$runoff, na.rm = TRUE)
+  
+  # Runoff efficiency
   
   data_list$runoff_eff <- sum(df$runoff)/sum(df$prec)
   
@@ -131,12 +142,8 @@ runoff_efficiency <- function(data_list) {
 }
 
 
-# Compute annual mean runoff
 
-runoff_mean <- function(data_list) {
-  
-  data_list$runoff_mean <- 12*mean(data_list$Runoff, na.rm = TRUE)
-  
-  return(data_list)
-  
-}
+
+
+
+

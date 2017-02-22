@@ -28,7 +28,7 @@ plot_cumsums <- function(data_monthly, istat) {
 plot_runoff <- function(data_monthly, istat) {
   
   name <- paste(data_monthly[[istat]]$metadata$regine_main,
-                data_monthly[[istat]]$metadata$station_name, sep = " ")
+                data_monthly[[istat]]$metadata$station_name, sep = " - ")
   
   time <- ymd(data_monthly[[istat]]$time_vec)
   
@@ -47,31 +47,28 @@ plot_runoff <- function(data_monthly, istat) {
 
 # Plot map
 
-plot_map <- function(df_meta) {
+plot_map <- function(df_meta, data_monthly) {
   
   # Colors for precipitation map
   
   pal <- colorBin(palette = "Blues",
                   na.color = "transparent",
-                  bins = c(0, 500, 700, 1000, 1300, 1600, 2000, 2500, 3000, 4000, 6000))
+                  bins = c(0, 500, 800, 1200, 1700, 2500, 3500, 5000, 7000))
   
   # Create leaflet map
   
   leaflet() %>%
     
-    addProviderTiles("Stamen.TonerLite",
-                     options = providerTileOptions(noWrap = TRUE)) %>%
+    addTiles("http://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo2graatone&zoom={z}&x={x}&y={y}",
+             attribution = "© Kartverket") %>%
     
-    addRasterImage(prec_raster, colors = pal, opacity = 0.8, group = "Precipitation") %>%
+    #addProviderTiles("Stamen.TonerLite", options = providerTileOptions(noWrap = TRUE)) %>%
     
-    addCircleMarkers(lng = df_meta$longitude[1],
-                     lat = df_meta$latitude[1],
-                     layerId = "selected_stat",
-                     color = "black",
-                     radius = 8,
-                     stroke = TRUE,
-                     opacity = 1,
-                     fillOpacity = 0) %>%
+    addRasterImage(prec_raster,
+                   colors = pal,
+                   opacity = 0.7,
+                   group = "Precipitation",
+                   project=FALSE) %>%
     
     fitBounds(min(df_meta$longitude),
               min(df_meta$latitude),
@@ -80,31 +77,31 @@ plot_map <- function(df_meta) {
   
 }
 
-# Plot gauged areas
+# # Plot gauged areas
+# 
+# plot_gauged_area <- function(df_gauged) {
+#   
+#   ggplot(df_gauged, aes(x = utm_east_z33, y = utm_north_z33)) + 
+#     geom_raster(aes(fill = value), show.legend = FALSE) +
+#     theme_classic(base_size = 10) + 
+#     theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
+#     theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
+#     coord_fixed(ratio = 1)+ coord_cartesian()
+#   
+# }
 
-plot_gauged_area <- function(df_gauged) {
-  
-  ggplot(df_gauged, aes(x = utm_east_z33, y = utm_north_z33)) + 
-    geom_raster(aes(fill = value), show.legend = FALSE) +
-    theme_classic(base_size = 10) + 
-    theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
-    theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
-    coord_fixed(ratio = 1)+ coord_cartesian()
-  
-}
 
-
-wsh_polygon_id <- function(x) {
-  
-  stat_name <- x$properties$Name
-  
-  stat_name <- strsplit(stat_name, " ")
-  
-  stat_name <- tail(stat_name[[1]],1)
-  
-  stat_name <- gsub(".0", "", stat_name, fixed = TRUE)
-  
-}
+# wsh_polygon_id <- function(x) {
+#   
+#   stat_name <- x$properties$Name
+#   
+#   stat_name <- strsplit(stat_name, " ")
+#   
+#   stat_name <- tail(stat_name[[1]],1)
+#   
+#   stat_name <- gsub(".0", "", stat_name, fixed = TRUE)
+#   
+# }
 
 
 

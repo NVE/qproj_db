@@ -10,35 +10,41 @@ print_summary <- function(data_monthly, istat) {
   
   area <- round(area, digits = 0)
   
+  # Average annual precipitation and runoff
+  
+  prec_mean <- round(data_monthly[[istat]]$prec_mean, digits = 0)
+  
+  runoff_mean <- round(data_monthly[[istat]]$runoff_mean, digits = 0)
+  
   # Runoff efficieny (runoff/precipitation)
   
-  df <- data.frame(runoff = data_monthly[[istat]]$Runoff,
-                   prec = data_monthly[[istat]]$Prec_mean)
+  runoff_eff <- round(data_monthly[[istat]]$runoff_eff, digits = 1)
   
-  df <- na.omit(df)
+  # Percent missing data
   
-  pq_ratio <- sum(df$runoff)/sum(df$prec)
+  frac_missing <- sum(is.na(data_monthly[[istat]]$Runoff)) / length(data_monthly[[istat]]$Runoff)
   
-  pq_ratio <- round(pq_ratio, digits = 1)
-  
-  # Easting and northing
-  
-  easting <- data_monthly[[istat]]$metadata$utm_east_z33
-  northing <- data_monthly[[istat]]$metadata$utm_north_z33
+  frac_missing <- round(100*frac_missing, digits = 0)
   
   # Artificial influence
   
-  is_regulated <- c(data_monthly[[istat]]$metadata$regulation_part_area,
-                    data_monthly[[istat]]$metadata$regulation_part_reservoirs,
-                    data_monthly[[istat]]$metadata$transfer_area_in,
-                    data_monthly[[istat]]$metadata$transfer_area_out)
+  regulated <- c(data_monthly[[istat]]$metadata$regulation_part_area,
+                 data_monthly[[istat]]$metadata$regulation_part_reservoirs,
+                 data_monthly[[istat]]$metadata$transfer_area_in,
+                 data_monthly[[istat]]$metadata$transfer_area_out)
   
-  if (any(is.na(is_regulated))) {
-    is_regulated = "Unknown"
-  } else if (any(is_regulated > 0)) {
-    is_regulated = "Yes"
+  if (any(is.na(regulated))) {
+    regulated = "Unknown"
+  } else if (any(regulated > 0)) {
+    regulated = "Yes"
   } else {
-    is_regulated = "No"
+    regulated = "No"
+  }
+  
+  first_year_regulation <- df_meta$first_year_regulation[istat]
+  
+  if (is.na(first_year_regulation)) {
+    first_year_regulation = "-"
   }
   
   # Land use
@@ -70,11 +76,13 @@ print_summary <- function(data_monthly, istat) {
   # Merge strings
   
   str <- c("@{station_name}\n",
-           "Runoff/Prec = @{pq_ratio}\n",
+           "Runoff (mm/year) = @{runoff_mean}\n",
+           "Precipitation (mm/year) = @{prec_mean}\n",
+           "Runoff/Prec = @{runoff_eff}\n",
+           "Missing data (%) = @{frac_missing}\n",
            "Area = @{area} km2\n",
-           "Easting = @{easting}\n",
-           "Northing = @{northing}\n",
-           "Is regulated = @{is_regulated}\n",
+           "Regulated = @{regulated}\n",
+           "First regulation = @{first_year_regulation}\n",
            "Forest = @{perc_forest} %\n",
            "Lake = @{perc_lake} %\n",
            "Glacier = @{perc_glacier} %\n",
