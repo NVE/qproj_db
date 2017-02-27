@@ -1,15 +1,41 @@
 # Libraries
 
-if (!require('shiny')) install.packages('shiny', repos = "http://cran.us.r-project.org"); library('shiny')
-if (!require('shinydashboard')) install.packages('shinydashboard', repos = "http://cran.us.r-project.org"); library('shinydashboard')
-if (!require('ggplot2')) install.packages('ggplot2', repos = "http://cran.us.r-project.org"); library('ggplot2')
-if (!require('lubridate')) install.packages('lubridate', repos = "http://cran.us.r-project.org"); library('lubridate')
-if (!require('plotly')) install.packages('plotly', repos = "http://cran.us.r-project.org"); library('plotly')
-if (!require('GetoptLong')) install.packages('GetoptLong', repos = "http://cran.us.r-project.org"); library('GetoptLong')
-if (!require('leaflet')) install.packages('leaflet', repos = "http://cran.us.r-project.org"); library('leaflet')
-if (!require('jsonlite')) install.packages('jsonlite', repos = "http://cran.us.r-project.org"); library('jsonlite')
-if (!require('raster')) install.packages('raster', repos = "http://cran.us.r-project.org"); library('raster')
-if (!require('rgdal')) install.packages('rgdal', repos = "http://cran.us.r-project.org"); library('rgdal')
+if (.Platform$OS.type == "windows") {
+  library('shiny')
+  library('shinydashboard')
+  library('ggplot2')
+  library('lubridate')
+  library('plotly')
+  library('GetoptLong')
+  library('leaflet')
+  library('jsonlite')
+  library('raster')
+  library('rgdal')
+}
+
+if (.Platform$OS.type == "unix") {
+  library('shiny')
+  library('shinydashboard')
+  library('ggplot2')
+  library('lubridate')
+  library('plotly')
+  library('GetoptLong')
+  library('leaflet', lib = "/home/jmg/R/x86_64-pc-linux-gnu-library/3.3")
+  library('jsonlite')
+  library('raster')
+  library('rgdal')
+}
+
+# if (!require('shiny')) install.packages('shiny', repos = "http://cran.us.r-project.org"); library('shiny')
+# if (!require('shinydashboard')) install.packages('shinydashboard', repos = "http://cran.us.r-project.org"); library('shinydashboard')
+# if (!require('ggplot2')) install.packages('ggplot2', repos = "http://cran.us.r-project.org"); library('ggplot2')
+# if (!require('lubridate')) install.packages('lubridate', repos = "http://cran.us.r-project.org"); library('lubridate')
+# if (!require('plotly')) install.packages('plotly', repos = "http://cran.us.r-project.org"); library('plotly')
+# if (!require('GetoptLong')) install.packages('GetoptLong', repos = "http://cran.us.r-project.org"); library('GetoptLong')
+# if (!require('leaflet')) install.packages('leaflet', repos = "http://cran.us.r-project.org"); library('leaflet')
+# if (!require('jsonlite')) install.packages('jsonlite', repos = "http://cran.us.r-project.org"); library('jsonlite')
+# if (!require('raster')) install.packages('raster', repos = "http://cran.us.r-project.org"); library('raster')
+# if (!require('rgdal')) install.packages('rgdal', repos = "http://cran.us.r-project.org"); library('rgdal')
 
 source("global.R")
 
