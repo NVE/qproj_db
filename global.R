@@ -3,11 +3,14 @@
 
 source("data_handling.R")
 source("plotting.R")
-source("printing.R")
 
 # Process data
 
 load("data/senorge_monthly_v20.RData")
+
+# load("data/senorge_daily_v20.RData")
+# 
+# data_monthly <- data_daily
 
 data_monthly <- lapply(data_monthly, average_elevbands)
 
