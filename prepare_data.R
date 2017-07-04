@@ -1,6 +1,14 @@
+
 # Script for preparing data to the application
 
 rm(list=ls())
+
+library(NVEDATA)
+library(raster)
+library(rgdal)
+library(rgeos)
+
+source("data_handling.R")
 
 # Function for computing polygons surrouding watersheds
 
@@ -45,21 +53,13 @@ load("//hdata/fou/Avrenningskart/Data/data_r_files/senorge_monthly_v20.RData")
 
 load("//hdata/fou/Avrenningskart/Data/data_r_files/senorge_yearly_v20.RData")
 
-# Read metadata
+# Compute statistics
 
-df_meta <- read.table("//hdata/fou/Avrenningskart/Data/metadata.txt", header = TRUE, sep = ";", dec = ".")
+data_monthly <- lapply(data_monthly, comp_stats)
 
-# Keep stations with at least 5 years of data
-
-nr_obs <- sapply(data_monthly, function(x) sum(is.na(x$Runoff)==FALSE))
-
-ikeep <- nr_obs > 12*5
-
-data_monthly <- data_monthly[ikeep]
-
-data_yearly <- data_yearly[ikeep]
-
-df_meta <- df_meta[ikeep, ]
+# # Read metadata
+# 
+# df_meta <- metadata_for_app(data_monthly)
 
 # Polygons for watersheds
 
@@ -71,7 +71,13 @@ save(data_monthly, file = "data/senorge_monthly_v20.RData")
 
 save(data_yearly, file = "data/senorge_yearly_v20.RData")
 
-write.table(df_meta, file = "data/metadata.txt", quote = FALSE, sep = ";", row.names = FALSE)
+# save(df_meta, file = "data/metadata.RData")
+
+
+
+# write.table(df_meta, file = "data/metadata.txt", quote = FALSE, sep = ";", row.names = FALSE)
+
+
 
 # Prepare precipitation map
 
@@ -129,18 +135,6 @@ save(prec_raster, file = "data/prec_raster.RData")
 # empty_raster <- projectRasterForLeaflet(empty_raster)
 # 
 # save(empty_raster, file = "data/empty_raster.RData")
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

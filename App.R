@@ -1,6 +1,7 @@
 # Handle libraries on Windows and Linux
 
 if (.Platform$OS.type == "windows") {
+  library('dplyr')
   library('readxl')
   library('shiny')
   library('shinydashboard')
@@ -15,6 +16,7 @@ if (.Platform$OS.type == "windows") {
 }
 
 if (.Platform$OS.type == "unix") {
+  library('dplyr')
   library('readxl')
   library('shiny')
   library('shinydashboard')
@@ -22,11 +24,14 @@ if (.Platform$OS.type == "unix") {
   library('lubridate')
   library('plotly')
   library('GetoptLong')
-  library('leaflet', lib = "/home/jmg/R/x86_64-pc-linux-gnu-library/3.3")
+  library('leaflet')
   library('jsonlite')
   library('raster')
   library('rgdal')
 }
+
+if (!require('dplyr')) install.packages('shiny', repos = "http://cran.us.r-project.org"); library('dplyr')
+if (!require('readxl')) install.packages('shiny', repos = "http://cran.us.r-project.org"); library('readxl')
 
 # if (!require('shiny')) install.packages('shiny', repos = "http://cran.us.r-project.org"); library('shiny')
 # if (!require('shinydashboard')) install.packages('shinydashboard', repos = "http://cran.us.r-project.org"); library('shinydashboard')
@@ -209,29 +214,9 @@ server <- function(input, output, session) {
   
   observe({
     
-    
-    ### JAN ###
-    
-    # Part for dealing with selected / deselected stations.
-    
-    # df_excel <- read_excel("//nve/fil/h/HM/Interne Prosjekter/Avrenningskart_1991-2020/Data utvalg/Serier til Avrenningskart 2016.xlsx")
-    # 
-    # df_excel$regine_main <- paste(df_excel$regine_area, df_excel$main_no, sep = ".")
-    # 
-    # 
-    # id_selected <- rep(0, nrow(df_excel))
-    
-    # id_selected[df_excel$aktuell_avrenningskart == "Ja"] <- 0
-    
-    
-    
-    ### JAN ###
-    
     map_disp <- input$map_disp
     
     plot_markers(map_disp, df_meta)
-    
-    # plot_markers(map_disp, df_meta, id_selected)
     
   })
   
@@ -265,15 +250,6 @@ server <- function(input, output, session) {
     plot_map(df_meta, data_monthly)
     
   })
-  
-  
-  # # Plot map with gauged areas
-  # 
-  # output$plot_wsh <- renderPlot({
-  #   
-  #   plot_gauged_area(df_gauged)
-  #   
-  # })
   
   
   # Print summary table

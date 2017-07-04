@@ -2,52 +2,66 @@
 
 # Plot station markers on the map
 
-plot_markers <- function(map_disp, df_meta) { #, id_selected) {
+plot_markers <- function(map_disp, df_meta) {
   
   
+  # Markers display selected stations
   
-  # 
-  # # Markers display selected stations
-  # 
-  # if (map_disp == "Selected stations") {
-  #   
-  #   # Colors and legend label
-  #   
-  #   col_pal <- c('#5ff442', '#f71f07')
-  #   
-  #   col_breaks <- c(-Inf, 0.5, Inf)
-  #   
-  #   legend_str <- c("Selected", "Discarded")
-  #   
-  #   col_binned <- cut(id_selected, col_breaks, labels = col_pal)
-  #   
-  #   # Update map
-  #   
-  #   leafletProxy("stat_map") %>%
-  #     
-  #     addCircleMarkers(lng = df_meta$longitude,
-  #                      lat = df_meta$latitude,
-  #                      layerId = paste(df_meta$regine_area, df_meta$main_no, sep = "."),
-  #                      color = col_binned,
-  #                      radius = 6,
-  #                      stroke = FALSE,
-  #                      opacity = 1,
-  #                      fillOpacity = 1) %>%
-  #     
-  #     addLegend("bottomright",
-  #               colors = col_pal,
-  #               labels = legend_str,
-  #               title = "Selected stations",
-  #               layerId = "stat_legend") %>%
-  #     
-  #     hideGroup(group = "Precipitation")
-  #   
-  # }
-  # 
-  
-  
-  
-  
+  if (map_disp == "Selected stations") {
+    
+    # Process excel table
+
+    filename <- "//hdata/fou/Avrenningskart/Serier_Avrenningskart_2017_ARB.xlsx"
+    
+    df_tmp <- read_metadata_file(filename)
+    
+    df_tmp$regine_main <- paste(df_tmp$regine_area, df_tmp$main_no, sep = ".")
+    
+    df_disp <- left_join(df_meta, df_tmp, by = "regine_main")
+    
+    selection <- rep(0, nrow(df_disp))
+    
+    selection[df_disp$aktuell_avrenningskart == "ja" | df_disp$aktuell_avrenningskart == "Ja"] <- 1
+    
+    selection[df_disp$aktuell_avrenningskart == "nei" | df_disp$aktuell_avrenningskart == "Nei"] <- 2
+    
+    selection[df_disp$aktuell_avrenningskart == "ikke vurdert"] <- 3
+    
+    df_disp$selection <- selection
+    
+    # Colors and legend label
+    
+    col_pal <- c("#EE7600", "#5ff442", "#f71f07", "#9932CC")
+    
+    col_breaks <- c(-Inf, 0.5, 1.5, 2.5, Inf)
+    
+    legend_str <- c("Unknown", "Selected", "Discarded", "Unevaluated")
+    
+    col_binned <- cut(df_disp$selection, col_breaks, labels = col_pal)
+    
+    # Update map
+    
+    leafletProxy("stat_map") %>%
+      
+      addCircleMarkers(lng = df_disp$longitude.x,
+                       lat = df_disp$latitude.x,
+                       layerId = paste(df_disp$regine_area.x, df_disp$main_no.x, sep = "."),
+                       color = col_binned,
+                       radius = 6,
+                       stroke = FALSE,
+                       opacity = 1,
+                       fillOpacity = 1) %>%
+      
+      addLegend("bottomright",
+                colors = col_pal,
+                labels = legend_str,
+                title = "Selected stations",
+                layerId = "stat_legend") %>%
+      
+      hideGroup(group = "Precipitation")
+    
+  }
+
   
   # Markers display runoff efficiency
   
@@ -191,7 +205,7 @@ plot_markers <- function(map_disp, df_meta) { #, id_selected) {
 plot_cumsums <- function(data_monthly, istat) {
   
   df <- data.frame(runoff = data_monthly[[istat]]$Runoff,
-                   prec = data_monthly[[istat]]$Prec_mean)
+                   prec = data_monthly[[istat]]$Prec)
   
   df <- na.omit(df)
   
@@ -264,37 +278,6 @@ plot_map <- function(df_meta, data_monthly) {
   
 }
 
-
-
-
-
-
-
-# # Plot gauged areas
-# 
-# plot_gauged_area <- function(df_gauged) {
-#   
-#   ggplot(df_gauged, aes(x = utm_east_z33, y = utm_north_z33)) + 
-#     geom_raster(aes(fill = value), show.legend = FALSE) +
-#     theme_classic(base_size = 10) + 
-#     theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
-#     theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
-#     coord_fixed(ratio = 1)+ coord_cartesian()
-#   
-# }
-
-
-# wsh_polygon_id <- function(x) {
-#   
-#   stat_name <- x$properties$Name
-#   
-#   stat_name <- strsplit(stat_name, " ")
-#   
-#   stat_name <- tail(stat_name[[1]],1)
-#   
-#   stat_name <- gsub(".0", "", stat_name, fixed = TRUE)
-#   
-# }
 
 
 

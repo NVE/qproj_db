@@ -1,38 +1,16 @@
 
-# # Data frame with coordinates of gauged areas
-# 
-# get_gauged_wsh <- function(data_monthly, xgrid, ygrid) {
-#   
-#   index_gauged <- c()
-#   
-#   for (iwsh in 1:length(data_monthly)) {
-#     
-#     index_gauged <- c(index_gauged, data_monthly[[iwsh]]$wsh_index)
-#     
-#   }
-#   
-#   index_gauged <- unique(index_gauged)
-#   
-#   df_gauged <- data.frame(utm_east_z33 = t(xgrid)[index_gauged],
-#                           utm_north_z33 = t(ygrid)[index_gauged],
-#                           value = rep(1, length(index_gauged)))
-#   
-# }
 
+# Construct metadata table from data list
 
-# Collect metadata
-
-get_metadata <- function(data_list, stats_keep)  {
+metadata_for_app <- function(data_monthly)  {
   
-  # Read metadata table
+  df_meta <- c()
   
-  df_meta <- read.table("data/metadata.txt", header = TRUE, sep = ";", dec = ".")
-  
-  # Merge regine and main number
-  
-  df_meta$regine_main <- paste(df_meta$regine_area, df_meta$main_no, sep = ".")
-  
-  # Augment with mean runoff/precipitation and runoff efficiency
+  for (i in 1:length(data_monthly)) {
+    
+    df_meta <- rbind(df_meta, data_monthly[[i]]$metadata)
+    
+  }
   
   df_meta$prec_mean <- sapply(data_monthly, function(x) x$prec_mean)
   
@@ -40,71 +18,7 @@ get_metadata <- function(data_list, stats_keep)  {
   
   df_meta$runoff_eff <- sapply(data_monthly, function(x) x$runoff_eff)
   
-#   # Assign data quality
-#   
-#   df_meta <- asses_data_qualtiy(df_meta)
-  
   return(df_meta)
-  
-}
-
-
-# # Assess data qualilty
-# 
-# asses_data_qualtiy <- function(df_meta) {
-#   
-#   df_meta$data_qual <- "poor_qual"
-#   
-#   # Watersheds with assumed low quality
-#   
-#   is_low_quality <- df_meta$regulation_part_area > 0 |
-#     df_meta$regulation_part_reservoirs > 0 |
-#     df_meta$transfer_area_in > 0 |
-#     df_meta$transfer_area_out > 0
-#   
-#   df_meta$data_qual[is_low_quality] <- "low_qual"
-#   
-#   # Watersheds with assumed good quality
-#   
-#   is_high_quality <- df_meta$br6_Klimastudier == "Y" |
-#     df_meta$br1_middelavrenning_1930_1960 == "Y" |
-#     df_meta$br23_HBV == "Y" |
-#     df_meta$br9_Flomvarsling == "Y"
-#   
-#   df_meta$data_qual[is_high_quality] <- "high_qual"
-#   
-#   return(df_meta)
-#   
-# }
-
-
-# Function for averaging precipitation and air temperature over elevation bands
-
-average_elevbands <- function(data_list) {
-  
-  # Number of elevation bands and time steps
-  
-  nbands <- length(data_list$frac_elev_band)
-  
-  ntimes <- length(data_list$time_vec)
-  
-  # Fraction of elevation bands to matrix
-  
-  frac_elev_band <- data_list$frac_elev_band
-  
-  frac_elev_band <- matrix(frac_elev_band, ntimes, nbands, byrow=TRUE)
-  
-  # Compute area averaged precipitation and air temperature
-  
-  Prec <- data_list$Prec
-  
-  data_list$Prec_mean <- rowSums(Prec * frac_elev_band)
-  
-  Tair <- data_list$Tair
-  
-  data_list$Tair_mean <- rowSums(Tair * frac_elev_band)
-  
-  return(data_list)
   
 }
 
@@ -115,7 +29,7 @@ comp_stats <- function(data_list) {
   
   # Remove missing data
   
-  df <- data.frame(prec = data_list$Prec_mean,
+  df <- data.frame(prec = data_list$Prec,
                    runoff = data_list$Runoff)
   
   df <- na.omit(df)
@@ -137,8 +51,37 @@ comp_stats <- function(data_list) {
 }
 
 
+# Read metadata file (excel table)
 
-
+read_metadata_file <- function(filename) {
+  
+  # Read station metadata
+  
+  meta_data <- read_excel(filename)
+  
+  meta_data <- tbl_df(meta_data)
+  
+  # # Keep rows with runoff data (parameter == 1001)
+  # 
+  # meta_data <- filter(meta_data, param_key==1001)
+  
+  # Remove duplicated stations
+  
+  idup <- duplicated(meta_data[, 1:3])
+  
+  meta_data <- meta_data[!idup, ]
+  
+  # Add station name as 'regine_area.main_no'
+  
+  meta_data <- mutate(meta_data, regine_main = paste(regine_area, main_no, sep = "."))
+  
+  # Add observation series as 'regine_area.main_no.point_no.param_key.version_no_end'
+  
+  meta_data <- mutate(meta_data, obs_series = paste(regine_area, main_no, point_no, param_key, version_no_end, sep = "."))
+  
+  return(meta_data)
+  
+}
 
 
 
