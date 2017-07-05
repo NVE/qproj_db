@@ -1,5 +1,6 @@
 
 
+
 # Plot station markers on the map
 
 plot_markers <- function(map_disp, df_meta) {
@@ -200,52 +201,58 @@ plot_markers <- function(map_disp, df_meta) {
 }
 
 
-# Plot cumulative precipitation against runoff
+# # Plot cumulative precipitation against runoff
+# 
+# plot_cumsums <- function(data_monthly, istat, plot_runoff_ranges) {
+#   
+#   df <- data.frame(date = data_monthly[[istat]]$time_vec,
+#                    runoff = data_monthly[[istat]]$Runoff,
+#                    prec = data_monthly[[istat]]$Prec)
+#   
+#  if (!is.null(plot_runoff_ranges$x)) {
+#    df <- with(df, df[(date >= plot_runoff_ranges$x[1] & date <= plot_runoff_ranges$x[2]), ])
+#  }
+#   
+#   df <- na.omit(df)
+#   
+#   runoff_acc <- cumsum(df$runoff)
+#   
+#   prec_acc <- cumsum(df$prec)
+#   
+#   df <- data.frame(runoff_acc = runoff_acc, prec_acc = prec_acc)
+#   
+#   ggplot(data = df, aes(x = runoff_acc, y = prec_acc)) +
+#     geom_smooth(method = 'lm', se = FALSE, size = 1, linetype = 2, col = "red") +
+#     geom_point() +
+#     xlab("Cumulative runoff (mm)") + 
+#     ylab("Cumulative precipitation (mm)")
+#   
+# }
 
-plot_cumsums <- function(data_monthly, istat) {
-  
-  df <- data.frame(runoff = data_monthly[[istat]]$Runoff,
-                   prec = data_monthly[[istat]]$Prec)
-  
-  df <- na.omit(df)
-  
-  runoff_acc <- cumsum(df$runoff)
-  
-  prec_acc <- cumsum(df$prec)
-  
-  df <- data.frame(runoff_acc = runoff_acc, prec_acc = prec_acc)
-  
-  ggplot(data = df, aes(x = runoff_acc, y = prec_acc)) +
-    geom_smooth(method = 'lm', se = FALSE, size = 1, linetype = 2, col = "red") +
-    geom_point() +
-    xlab("Cumulative runoff (mm)") + 
-    ylab("Cumulative precipitation (mm)")
-  
-}
 
-
-# Plot runoff time series (note that this plot often produces warnings
-# since the time series can contain missing values)
-
-plot_runoff <- function(data_monthly, istat) {
-  
-  name <- paste(data_monthly[[istat]]$metadata$regine_main,
-                data_monthly[[istat]]$metadata$station_name, sep = " - ")
-  
-  time <- ymd(data_monthly[[istat]]$time_vec)
-  
-  runoff <- data_monthly[[istat]]$Runoff
-  
-  df <- data.frame(time = time, runoff = runoff)
-  
-  ggplot(data = df, aes(x = time, y = runoff)) + 
-    geom_line(col = "red", size = 1) +
-    xlab("") +
-    ylab("Runoff (mm/month)") +
-    ggtitle(label = name) + 
-    theme_set(theme_grey(base_size = 12)) 
-  
-}
+# # Plot runoff time series (note that this plot often produces warnings
+# # since the time series can contain missing values)
+# 
+# plot_runoff <- function(data_monthly, istat, plot_ranges) {
+#   
+#   name <- paste(data_monthly[[istat]]$metadata$regine_main,
+#                 data_monthly[[istat]]$metadata$station_name, sep = " - ")
+#   
+#   time <- ymd(data_monthly[[istat]]$time_vec)
+#   
+#   runoff <- data_monthly[[istat]]$Runoff
+#   
+#   df <- data.frame(time = time, runoff = runoff)
+#   
+#   ggplot(data = df, aes(x = time, y = runoff)) + 
+#     geom_line(col = "red", size = 1) +
+#     xlab("") +
+#     ylab("Runoff (mm/month)") +
+#     ggtitle(label = name) + 
+#     theme_set(theme_grey(base_size = 12))  #+
+#     #coord_cartesian(xlim = plot_runoff_ranges$x, expand = FALSE)   # NEWNEWNEW
+#   
+# }
 
 
 # Plot the basic map
@@ -263,7 +270,7 @@ plot_map <- function(df_meta, data_monthly) {
   leaflet() %>%
     
     addTiles("http://opencache.statkart.no/gatekeeper/gk/gk.open_gmaps?layers=topo2graatone&zoom={z}&x={x}&y={y}",
-             attribution = "© Kartverket") %>%
+             attribution = "? Kartverket") %>%
     
     addRasterImage(prec_raster,
                    colors = pal,

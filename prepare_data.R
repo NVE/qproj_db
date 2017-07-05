@@ -47,37 +47,37 @@ wsh_polygon <- function(data) {
   
 }
 
+# Function for rounding and reducing the data
+
+reduce_data <- function(data_list) {
+  
+  data_list$Prec <- round(data_list$Prec,1)
+  data_list$Runoff <- round(data_list$Runoff,1)
+  data_list$wsh_index <- NULL
+  
+  return(data_list)
+  
+}
+
 # Load data
 
 load("//hdata/fou/Avrenningskart/Data/data_r_files/senorge_monthly_v20.RData")
-
-load("//hdata/fou/Avrenningskart/Data/data_r_files/senorge_yearly_v20.RData")
 
 # Compute statistics
 
 data_monthly <- lapply(data_monthly, comp_stats)
 
-# # Read metadata
-# 
-# df_meta <- metadata_for_app(data_monthly)
-
 # Polygons for watersheds
 
 data_monthly <- lapply(data_monthly, wsh_polygon)
 
+# Reduce data size by removing some entries and rounding data
+
+data_monthly <- lapply(data_monthly, reduce_data)
+
 # Save to files
 
 save(data_monthly, file = "data/senorge_monthly_v20.RData")
-
-save(data_yearly, file = "data/senorge_yearly_v20.RData")
-
-# save(df_meta, file = "data/metadata.RData")
-
-
-
-# write.table(df_meta, file = "data/metadata.txt", quote = FALSE, sep = ";", row.names = FALSE)
-
-
 
 # Prepare precipitation map
 

@@ -1,4 +1,5 @@
 
+
 # Print summary table
 
 print_summary <- function(data_monthly, istat) {
@@ -53,7 +54,7 @@ print_summary <- function(data_monthly, istat) {
   perc_lake <- round(data_monthly[[istat]]$metadata$perc_lake)
   perc_glacier <- round(data_monthly[[istat]]$metadata$perc_glacier)
   
-  # Bruksområden
+  # Bruksomr?den
   
   br1_middelavrenning_1930_1960 <- data_monthly[[istat]]$metadata$br1_middelavrenning_1930_1960
   br2_Tilsigsberegning <- data_monthly[[istat]]$metadata$br2_Tilsigsberegning
@@ -86,7 +87,7 @@ print_summary <- function(data_monthly, istat) {
            "Forest = @{perc_forest} %\n",
            "Lake = @{perc_lake} %\n",
            "Glacier = @{perc_glacier} %\n",
-           "Bruksområden\n",
+           "Bruksomr?den\n",
            "Middelavrenning 1930-1960 = @{br1_middelavrenning_1930_1960}\n",
            "Tilsigsberegning = @{br2_Tilsigsberegning}\n",
            "Regional flomfrekvensanalyse = @{br3_Regional_flomfrekvensanalyse}\n",

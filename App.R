@@ -30,9 +30,6 @@ if (.Platform$OS.type == "unix") {
   library('rgdal')
 }
 
-if (!require('dplyr')) install.packages('shiny', repos = "http://cran.us.r-project.org"); library('dplyr')
-if (!require('readxl')) install.packages('shiny', repos = "http://cran.us.r-project.org"); library('readxl')
-
 # if (!require('shiny')) install.packages('shiny', repos = "http://cran.us.r-project.org"); library('shiny')
 # if (!require('shinydashboard')) install.packages('shinydashboard', repos = "http://cran.us.r-project.org"); library('shinydashboard')
 # if (!require('ggplot2')) install.packages('ggplot2', repos = "http://cran.us.r-project.org"); library('ggplot2')
@@ -98,14 +95,36 @@ ui <- dashboardPage(
                solidHeader = TRUE,
                status = "primary",
                plotOutput("plot_runoff",
-                          height = 300)
+                          height = 300,
+                          dblclick = "plot_runoff_dblclick",
+                          brush = brushOpts(
+                            id = "plot_runoff_brush",
+                            direction = "x",
+                            resetOnNew = TRUE
+                          )
+               )
              ),
              box(
                title = NULL,
                width = NULL,
                solidHeader = TRUE,
                status = "primary",
-               plotOutput("plot_cumsums")
+               plotOutput("plot_cumsums"),
+               
+               absolutePanel(id = "cumsums_controls",
+                             draggable = FALSE,
+                             top = 60, left = 100,
+                             right = "auto", bottom = "auto",
+                             width = 120, height = "auto",
+                             
+                             selectInput(inputId = "cumsums_disp",
+                                         label = NULL,
+                                         choices = c("Precipitation", "Ref runoff"),
+                                         selected = "Precipitation")
+                             
+                             
+                             
+               )
              )
              
       ),
@@ -144,6 +163,27 @@ ui <- dashboardPage(
 
 server <- function(input, output, session) { 
   
+  # Reactive values used for zooming in the runoff plots
+  
+  plot_runoff_ranges <- reactiveValues(x = NULL)
+  
+  
+  # Reactive values for reference station
+  
+  ref_station <- reactiveValues(regine_main = NULL)
+  
+  
+  
+  # This observer handles the zooming of the plots
+  
+  observeEvent(input$plot_runoff_dblclick, {
+    brush <- input$plot_runoff_brush
+    if (!is.null(brush)) {
+      plot_runoff_ranges$x <- c(brush$xmin, brush$xmax)
+    } else {
+      plot_runoff_ranges$x <- NULL
+    }
+  })
   
   # This observer updates the station selection and catchment boundary in map
   # when selecting a new station
@@ -177,9 +217,23 @@ server <- function(input, output, session) {
   
   observeEvent(input$stat_map_marker_click, {
     
-    if(input$stat_map_marker_click$id != "selected_stat") {
+    if(input$stat_map_marker_click$id != "selected_stat") {    # Nothing to do if selecting an already selected station
       
-      istat <- which(stats == input$stat_map_marker_click$id)
+      plot_runoff_ranges$x <- NULL # Reset zoom level
+      
+      if (input$stat_map_marker_click$id == "ref_stat") {
+        
+        istat <- which(stats == ref_station$regine_main)   # Handle the case of selecting the reference runoff station
+        
+        regine_main <- ref_station$regine_main
+        
+      } else {
+        
+        istat <- which(stats == input$stat_map_marker_click$id)
+        
+        regine_main <- input$stat_map_marker_click$id
+        
+      }
       
       leafletProxy("stat_map", session) %>%
         
@@ -202,7 +256,7 @@ server <- function(input, output, session) {
       updateSelectInput(session, "stat_dropdown",
                         label = "Select station:",
                         choices = stats,
-                        selected = input$stat_map_marker_click$id)
+                        selected = regine_main)
       
     }
     
@@ -221,13 +275,124 @@ server <- function(input, output, session) {
   })
   
   
-  # Plot cumulative precipitation against cumulative runoff
+  # Mass balance plots
   
   output$plot_cumsums <- renderPlot({
     
+    # Note: This part does not work using a seperate function on linux
+    
+    if (!is.null(plot_runoff_ranges$x)) {
+      plot_runoff_ranges$x <- as.Date(plot_runoff_ranges$x, origin = "1970-01-01")
+    }
+    
     istat <- which(stats == input$stat_dropdown)
     
-    plot_cumsums(data_monthly, istat)
+    # Plot cumulative precipitation against cumulative runoff
+    
+    if (input$cumsums_disp == "Precipitation") {
+      
+      # Remove reference station from map
+      
+      leafletProxy("stat_map", session) %>%
+        
+        removeMarker(layerId = "ref_stat")
+      
+      # Get data and plot results
+      
+      df <- data.frame(date = data_monthly[[istat]]$time_vec,
+                       runoff = data_monthly[[istat]]$Runoff,
+                       prec = data_monthly[[istat]]$Prec)
+      
+      if (!is.null(plot_runoff_ranges$x)) {
+        df <- with(df, df[(date >= plot_runoff_ranges$x[1] & date <= plot_runoff_ranges$x[2]), ])
+      }
+      
+      df <- na.omit(df)
+      
+      runoff_acc <- cumsum(df$runoff)
+      
+      prec_acc <- cumsum(df$prec)
+      
+      df <- data.frame(runoff_acc = runoff_acc, prec_acc = prec_acc)
+      
+      ggplot(data = df, aes(x = runoff_acc, y = prec_acc)) +
+        geom_smooth(method = 'lm', se = FALSE, size = 1, linetype = 2, col = "red") +
+        geom_point() +
+        xlab("Cumulative runoff (mm)") + 
+        ylab("Cumulative precipitation (mm)")
+      
+    } 
+    
+    # Plot cumulative reference runoff against cumulative runoff for target station
+    
+    else if (input$cumsums_disp == "Ref runoff") {
+    
+      # Find closest reference runoff station (klimaserier)
+
+      lat_sel <- df_meta$utm_north_z33[istat]
+
+      lon_sel <- df_meta$utm_east_z33[istat]
+
+      df_tmp <- df_meta[-istat, ]
+
+      df_tmp <- df_tmp[df_tmp$br34_Flomkart_aktive_ureg == "Y", ]
+
+      df_tmp$dist = sqrt((df_tmp$utm_north_z33 - lat_sel)^2 + (df_tmp$utm_east_z33 - lon_sel)^2)
+
+      stat_ref <- df_tmp$regine_main[which.min(df_tmp$dist)]
+
+      # Find the reference station in the original dataset
+      
+      iref <- which(df_meta$regine_main == stat_ref)
+      
+      # Add reference station to reactive value
+      
+      ref_station$regine_main <- stat_ref
+      
+      # Display reference station in map
+      
+      leafletProxy("stat_map", session) %>%
+
+        addCircleMarkers(lng = df_meta$longitude[iref],
+                         lat = df_meta$latitude[iref],
+                         layerId = "ref_stat",
+                         color = "yellow",
+                         radius = 8,
+                         stroke = TRUE,
+                         opacity = 1,
+                         fillOpacity = 0)
+      
+      # Get the data and plot the results
+
+      df <- data.frame(date = data_monthly[[istat]]$time_vec,
+                       runoff_target = data_monthly[[istat]]$Runoff,
+                       runoff_ref = data_monthly[[iref]]$Prec)
+
+      if (!is.null(plot_runoff_ranges$x)) {
+        df <- with(df, df[(date >= plot_runoff_ranges$x[1] & date <= plot_runoff_ranges$x[2]), ])
+      }
+
+      df <- na.omit(df)
+
+      runoff_target_acc <- cumsum(df$runoff_target)
+
+      runoff_ref_acc <- cumsum(df$runoff_ref)
+      
+      name <- paste("Reference station",
+                    data_monthly[[iref]]$metadata$regine_main,
+                    data_monthly[[iref]]$metadata$station_name, sep = " - ")
+      
+      ggplot(data = df, aes(x = runoff_target_acc, y = runoff_ref_acc)) +
+        geom_smooth(method = 'lm', se = FALSE, size = 1, linetype = 2, col = "red") +
+        geom_point() +
+        xlab("Cumulative runoff target (mm)") +
+        ylab("Cumulative runoff reference (mm)") +
+        ggtitle(label = name)
+      
+      
+      
+
+    }
     
   })
   
@@ -236,9 +401,32 @@ server <- function(input, output, session) {
   
   output$plot_runoff <- renderPlot({
     
+    # Note: This part does not work using a seperate function on linux
+    
+    if (!is.null(plot_runoff_ranges$x)) {
+      plot_runoff_ranges$x <- as.Date(plot_runoff_ranges$x, origin = "1970-01-01")
+    }
+    
     istat <- which(stats == input$stat_dropdown)
     
-    plot_runoff(data_monthly, istat)
+    # Plotting the results
+    
+    name <- paste(data_monthly[[istat]]$metadata$regine_main,
+                  data_monthly[[istat]]$metadata$station_name, sep = " - ")
+    
+    time <- ymd(data_monthly[[istat]]$time_vec)
+    
+    runoff <- data_monthly[[istat]]$Runoff
+    
+    df <- data.frame(time = time, runoff = runoff)
+    
+    ggplot(data = df, aes(x = time, y = runoff)) + 
+      geom_line(col = "red", size = 1) +
+      xlab("") +
+      ylab("Runoff (mm/month)") +
+      ggtitle(label = name) + 
+      theme_set(theme_grey(base_size = 12))  +
+      coord_cartesian(xlim = plot_runoff_ranges$x, expand = FALSE)   # NEWNEWNEW
     
   })
   
