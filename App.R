@@ -335,7 +335,7 @@ server <- function(input, output, session) {
 
       df_tmp <- df_meta[-istat, ]
 
-      df_tmp <- df_tmp[df_tmp$br34_Hydrologisk_referanseserier_klimastudier == "Y", ]
+      df_tmp <- df_tmp[which(df_tmp$br34_Hydrologisk_referanseserier_klimastudier == "Y"), ]
 
       df_tmp$dist = sqrt((df_tmp$utm_north_z33 - lat_sel)^2 + (df_tmp$utm_east_z33 - lon_sel)^2)
 
@@ -366,7 +366,7 @@ server <- function(input, output, session) {
 
       df <- data.frame(date = data_main[[istat]]$time_vec,
                        runoff_target = data_main[[istat]]$Runoff,
-                       runoff_ref = data_main[[iref]]$Prec)
+                       runoff_ref = data_main[[iref]]$Runoff)
 
       if (!is.null(plot_runoff_ranges$x)) {
         df <- with(df, df[(date >= plot_runoff_ranges$x[1] & date <= plot_runoff_ranges$x[2]), ])
@@ -389,9 +389,6 @@ server <- function(input, output, session) {
         ylab("Cumulative runoff reference (mm)") +
         ggtitle(label = name)
       
-      
-      
-
     }
     
   })
