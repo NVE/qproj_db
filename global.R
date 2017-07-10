@@ -7,19 +7,19 @@ source("printing.R")
 
 # Process data
 
-load("data/senorge_monthly_v20.RData")
+load("data/senorge_main.RData")
 
-data_monthly <- lapply(data_monthly, comp_stats)
+data_main <- lapply(data_main, comp_stats)
 
 # Get station names
 
 get_stat <- function(x) x$regine_main
 
-stats <- sapply(data_monthly, get_stat)
+stats <- sapply(data_main, get_stat)
 
 # Get metadata
 
-df_meta <- metadata_for_app(data_monthly)
+df_meta <- metadata_for_app(data_main)
 
 # Grids with coordinates
 

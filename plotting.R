@@ -22,11 +22,11 @@ plot_markers <- function(map_disp, df_meta) {
     
     selection <- rep(0, nrow(df_disp))
     
-    selection[df_disp$aktuell_avrenningskart == "ja" | df_disp$aktuell_avrenningskart == "Ja"] <- 1
+    selection[df_disp$aktuell_avrenningskart.y == "ja" | df_disp$aktuell_avrenningskart.y == "Ja"] <- 1
     
-    selection[df_disp$aktuell_avrenningskart == "nei" | df_disp$aktuell_avrenningskart == "Nei"] <- 2
+    selection[df_disp$aktuell_avrenningskart.y == "nei" | df_disp$aktuell_avrenningskart.y == "Nei"] <- 2
     
-    selection[df_disp$aktuell_avrenningskart == "ikke vurdert"] <- 3
+    selection[df_disp$aktuell_avrenningskart.y == "ikke vurdert"] <- 3
     
     df_disp$selection <- selection
     
@@ -203,11 +203,11 @@ plot_markers <- function(map_disp, df_meta) {
 
 # # Plot cumulative precipitation against runoff
 # 
-# plot_cumsums <- function(data_monthly, istat, plot_runoff_ranges) {
+# plot_cumsums <- function(data_main, istat, plot_runoff_ranges) {
 #   
-#   df <- data.frame(date = data_monthly[[istat]]$time_vec,
-#                    runoff = data_monthly[[istat]]$Runoff,
-#                    prec = data_monthly[[istat]]$Prec)
+#   df <- data.frame(date = data_main[[istat]]$time_vec,
+#                    runoff = data_main[[istat]]$Runoff,
+#                    prec = data_main[[istat]]$Prec)
 #   
 #  if (!is.null(plot_runoff_ranges$x)) {
 #    df <- with(df, df[(date >= plot_runoff_ranges$x[1] & date <= plot_runoff_ranges$x[2]), ])
@@ -233,14 +233,14 @@ plot_markers <- function(map_disp, df_meta) {
 # # Plot runoff time series (note that this plot often produces warnings
 # # since the time series can contain missing values)
 # 
-# plot_runoff <- function(data_monthly, istat, plot_ranges) {
+# plot_runoff <- function(data_main, istat, plot_ranges) {
 #   
-#   name <- paste(data_monthly[[istat]]$metadata$regine_main,
-#                 data_monthly[[istat]]$metadata$station_name, sep = " - ")
+#   name <- paste(data_main[[istat]]$metadata$regine_main,
+#                 data_main[[istat]]$metadata$station_name, sep = " - ")
 #   
-#   time <- ymd(data_monthly[[istat]]$time_vec)
+#   time <- ymd(data_main[[istat]]$time_vec)
 #   
-#   runoff <- data_monthly[[istat]]$Runoff
+#   runoff <- data_main[[istat]]$Runoff
 #   
 #   df <- data.frame(time = time, runoff = runoff)
 #   
@@ -257,7 +257,7 @@ plot_markers <- function(map_disp, df_meta) {
 
 # Plot the basic map
 
-plot_map <- function(df_meta, data_monthly) {
+plot_map <- function(df_meta, data_main) {
   
   # Colors for precipitation map
   

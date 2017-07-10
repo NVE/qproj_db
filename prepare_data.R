@@ -61,23 +61,27 @@ reduce_data <- function(data_list) {
 
 # Load data
 
-load("//hdata/fou/Avrenningskart/Data/data_r_files/senorge_monthly_v20.RData")
+load("//hdata/fou/Avrenningskart/Data/data_r_files/senorge_daily_v20.RData")
+
+# Rename data
+
+data_main <- data_daily
 
 # Compute statistics
 
-data_monthly <- lapply(data_monthly, comp_stats)
+data_main <- lapply(data_main, comp_stats)
 
 # Polygons for watersheds
 
-data_monthly <- lapply(data_monthly, wsh_polygon)
+data_main <- lapply(data_main, wsh_polygon)
 
 # Reduce data size by removing some entries and rounding data
 
-data_monthly <- lapply(data_monthly, reduce_data)
+data_main <- lapply(data_main, reduce_data)
 
 # Save to files
 
-save(data_monthly, file = "data/senorge_monthly_v20.RData")
+save(data_main, file = "data/senorge_main.RData")
 
 # Prepare precipitation map
 

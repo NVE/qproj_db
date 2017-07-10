@@ -194,7 +194,7 @@ server <- function(input, output, session) {
     
     leafletProxy("stat_map", session) %>%
       
-      addPolygons(data = data_monthly[[istat]]$wsh_poly,
+      addPolygons(data = data_main[[istat]]$wsh_poly,
                   weight = 2,
                   color = "red",
                   fill = FALSE,
@@ -237,7 +237,7 @@ server <- function(input, output, session) {
       
       leafletProxy("stat_map", session) %>%
         
-        addPolygons(data = data_monthly[[istat]]$wsh_poly,
+        addPolygons(data = data_main[[istat]]$wsh_poly,
                     weight = 2,
                     color = "red",
                     fill = FALSE,
@@ -299,9 +299,9 @@ server <- function(input, output, session) {
       
       # Get data and plot results
       
-      df <- data.frame(date = data_monthly[[istat]]$time_vec,
-                       runoff = data_monthly[[istat]]$Runoff,
-                       prec = data_monthly[[istat]]$Prec)
+      df <- data.frame(date = data_main[[istat]]$time_vec,
+                       runoff = data_main[[istat]]$Runoff,
+                       prec = data_main[[istat]]$Prec)
       
       if (!is.null(plot_runoff_ranges$x)) {
         df <- with(df, df[(date >= plot_runoff_ranges$x[1] & date <= plot_runoff_ranges$x[2]), ])
@@ -335,7 +335,7 @@ server <- function(input, output, session) {
 
       df_tmp <- df_meta[-istat, ]
 
-      df_tmp <- df_tmp[df_tmp$br34_Flomkart_aktive_ureg == "Y", ]
+      df_tmp <- df_tmp[df_tmp$br34_Hydrologisk_referanseserier_klimastudier == "Y", ]
 
       df_tmp$dist = sqrt((df_tmp$utm_north_z33 - lat_sel)^2 + (df_tmp$utm_east_z33 - lon_sel)^2)
 
@@ -364,9 +364,9 @@ server <- function(input, output, session) {
       
       # Get the data and plot the results
 
-      df <- data.frame(date = data_monthly[[istat]]$time_vec,
-                       runoff_target = data_monthly[[istat]]$Runoff,
-                       runoff_ref = data_monthly[[iref]]$Prec)
+      df <- data.frame(date = data_main[[istat]]$time_vec,
+                       runoff_target = data_main[[istat]]$Runoff,
+                       runoff_ref = data_main[[iref]]$Prec)
 
       if (!is.null(plot_runoff_ranges$x)) {
         df <- with(df, df[(date >= plot_runoff_ranges$x[1] & date <= plot_runoff_ranges$x[2]), ])
@@ -379,8 +379,8 @@ server <- function(input, output, session) {
       runoff_ref_acc <- cumsum(df$runoff_ref)
       
       name <- paste("Reference station",
-                    data_monthly[[iref]]$metadata$regine_main,
-                    data_monthly[[iref]]$metadata$station_name, sep = " - ")
+                    data_main[[iref]]$metadata$regine_main,
+                    data_main[[iref]]$metadata$station_name, sep = " - ")
       
       ggplot(data = df, aes(x = runoff_target_acc, y = runoff_ref_acc)) +
         geom_smooth(method = 'lm', se = FALSE, size = 1, linetype = 2, col = "red") +
@@ -411,19 +411,19 @@ server <- function(input, output, session) {
     
     # Plotting the results
     
-    name <- paste(data_monthly[[istat]]$metadata$regine_main,
-                  data_monthly[[istat]]$metadata$station_name, sep = " - ")
+    name <- paste(data_main[[istat]]$metadata$regine_main,
+                  data_main[[istat]]$metadata$station_name, sep = " - ")
     
-    time <- ymd(data_monthly[[istat]]$time_vec)
+    time <- ymd(data_main[[istat]]$time_vec)
     
-    runoff <- data_monthly[[istat]]$Runoff
+    runoff <- data_main[[istat]]$Runoff
     
     df <- data.frame(time = time, runoff = runoff)
     
     ggplot(data = df, aes(x = time, y = runoff)) + 
       geom_line(col = "red", size = 1) +
       xlab("") +
-      ylab("Runoff (mm/month)") +
+      ylab("Runoff (mm/day)") +
       ggtitle(label = name) + 
       theme_set(theme_grey(base_size = 12))  +
       coord_cartesian(xlim = plot_runoff_ranges$x, expand = FALSE)   # NEWNEWNEW
@@ -435,7 +435,7 @@ server <- function(input, output, session) {
   
   output$stat_map <- renderLeaflet({
     
-    plot_map(df_meta, data_monthly)
+    plot_map(df_meta, data_main)
     
   })
   
@@ -446,7 +446,7 @@ server <- function(input, output, session) {
     
     istat <- which(stats == input$stat_dropdown)
     
-    print_summary(data_monthly, istat)
+    print_summary(data_main, istat)
     
   })
   

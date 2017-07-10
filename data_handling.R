@@ -2,21 +2,21 @@
 
 # Construct metadata table from data list
 
-metadata_for_app <- function(data_monthly)  {
+metadata_for_app <- function(data_main)  {
   
   df_meta <- c()
   
-  for (i in 1:length(data_monthly)) {
+  for (i in 1:length(data_main)) {
     
-    df_meta <- rbind(df_meta, data_monthly[[i]]$metadata)
+    df_meta <- rbind(df_meta, data_main[[i]]$metadata)
     
   }
   
-  df_meta$prec_mean <- sapply(data_monthly, function(x) x$prec_mean)
+  df_meta$prec_mean <- sapply(data_main, function(x) x$prec_mean)
   
-  df_meta$runoff_mean <- sapply(data_monthly, function(x) x$runoff_mean)
+  df_meta$runoff_mean <- sapply(data_main, function(x) x$runoff_mean)
   
-  df_meta$runoff_eff <- sapply(data_monthly, function(x) x$runoff_eff)
+  df_meta$runoff_eff <- sapply(data_main, function(x) x$runoff_eff)
   
   return(df_meta)
   
@@ -36,11 +36,11 @@ comp_stats <- function(data_list) {
   
   # Annual average precipitation
   
-  data_list$prec_mean <- 12*mean(df$prec, na.rm = TRUE)
+  data_list$prec_mean <- 365*mean(df$prec, na.rm = TRUE)
   
   # Annual average runoff
   
-  data_list$runoff_mean <- 12*mean(df$runoff, na.rm = TRUE)
+  data_list$runoff_mean <- 365*mean(df$runoff, na.rm = TRUE)
   
   # Runoff efficiency
   
