@@ -11,6 +11,14 @@ load("data/senorge_main.RData")
 
 data_main <- lapply(data_main, comp_stats)
 
+# Process yearly data
+
+load("data/senorge_yearly_v20.RData")
+
+for (i in 1:length(data_main)) {data_main[[i]]$runoff_yearly <- data_yearly[[i]]$Runoff/365}
+
+for (i in 1:length(data_main)) {data_main[[i]]$time_yearly <- data_yearly[[i]]$time_vec}
+
 # Get station names
 
 get_stat <- function(x) x$regine_main

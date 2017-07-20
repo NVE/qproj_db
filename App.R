@@ -115,11 +115,11 @@ ui <- dashboardPage(
                              draggable = FALSE,
                              top = 60, left = 100,
                              right = "auto", bottom = "auto",
-                             width = 120, height = "auto",
+                             width = 160, height = "auto",
                              
                              selectInput(inputId = "cumsums_disp",
                                          label = NULL,
-                                         choices = c("Precipitation", "Ref runoff"),
+                                         choices = c("Precipitation", "Ref runoff", "Ref yearly compare"),
                                          selected = "Precipitation")
                              
                              
@@ -323,6 +323,7 @@ server <- function(input, output, session) {
       
     } 
     
+    
     # Plot cumulative reference runoff against cumulative runoff for target station
     
     else if (input$cumsums_disp == "Ref runoff") {
@@ -391,6 +392,81 @@ server <- function(input, output, session) {
       
     }
     
+    # Plot annual-mean daily runoff against the one of reference station
+    
+    else if (input$cumsums_disp == "Ref yearly compare") {
+      
+      #Get station markers
+      
+      lat_sel <- df_meta$utm_north_z33[istat]
+      
+      lon_sel <- df_meta$utm_east_z33[istat]
+      
+      df_tmp <- df_meta[-istat, ]
+      
+      df_tmp <- df_tmp[which(df_tmp$br34_Hydrologisk_referanseserier_klimastudier == "Y"), ]
+      
+      df_tmp$dist = sqrt((df_tmp$utm_north_z33 - lat_sel)^2 + (df_tmp$utm_east_z33 - lon_sel)^2)
+      
+      stat_ref <- df_tmp$regine_main[which.min(df_tmp$dist)]
+      
+      # Find the reference station in the original dataset
+      
+      iref <- which(df_meta$regine_main == stat_ref)
+      
+      # Add reference station to reactive value
+      
+      ref_station$regine_main <- stat_ref
+      
+      # Display reference station in map
+      
+      leafletProxy("stat_map", session) %>%
+        
+        addCircleMarkers(lng = df_meta$longitude[iref],
+                         lat = df_meta$latitude[iref],
+                         layerId = "ref_stat",
+                         color = "yellow",
+                         radius = 8,
+                         stroke = TRUE,
+                         opacity = 1,
+                         fillOpacity = 0)
+      
+      
+      if (!is.null(plot_runoff_ranges$x)) {
+        plot_runoff_ranges$x <- as.Date(plot_runoff_ranges$x, origin = "1970-01-01")
+      }
+      
+      istat <- which(stats == input$stat_dropdown)
+      
+      # Plotting the results
+      
+      name <- paste(data_main[[istat]]$metadata$regine_main, '-', 
+                    data_main[[istat]]$metadata$station_name, '(black)' ,' vs. ',
+                    data_main[[iref]]$metadata$regine_main, '-', 
+                    data_main[[iref]]$metadata$station_name, '(red)')
+      
+      time_yearly <- ymd(data_main[[istat]]$time_yearly)
+      
+      runoff_yearly <- data_main[[istat]]$runoff_yearly
+      
+      runoff_ref <- data_main[[iref]]$runoff_yearly
+      
+      
+      
+      df <- data.frame(time = time_yearly, runoff = runoff_yearly, ref = runoff_ref)
+      df <- na.omit(df)
+      
+      ggplot(data = df, aes(x = time)) + 
+        geom_step(aes(y=runoff), col = "black", size = 0.5) +
+        geom_step(aes(y=ref), col = "red", size = 0.5) +
+        xlab("") +
+        ylab("annual-mean daily runoff (mm/day)") +
+        ggtitle(label = name) + 
+        theme_set(theme_grey(base_size = 12))  +
+        coord_cartesian(xlim = plot_runoff_ranges$x, expand = FALSE)   # NEWNEWNEW
+      
+    }
+    
   })
   
   
@@ -424,6 +500,7 @@ server <- function(input, output, session) {
       ggtitle(label = name) + 
       theme_set(theme_grey(base_size = 12))  +
       coord_cartesian(xlim = plot_runoff_ranges$x, expand = FALSE)   # NEWNEWNEW
+    
     
   })
   
